@@ -7,7 +7,7 @@
         <title>Laravel</title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-
+        <link rel="stylesheet" href="https://sweetalert2.github.io/bootstrap4-buttons.css">
         <style>
             .flash-message {
                 position: fixed;
@@ -61,7 +61,7 @@
                                         <td>{{ $item->name }}</td>
                                         <td>@if($item->status == true) Done @endif</td>
                                         <td>
-                                            <button class="btn btn-success update"><i class="fa fa-check-square-o" aria-hidden="true"></i></button>
+                                            <button class="btn btn-success update" @if($item->status == true) style="display: none" @endif><i class="fa fa-check-square-o" aria-hidden="true"></i></button>
                                             <button class="btn btn-danger remove"><i class="fa fa-times" aria-hidden="true"></i></button>
                                         </td>
                                     </tr>
@@ -73,20 +73,13 @@
             </div>
         </div>
         <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js" integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+" crossorigin="anonymous"></script>
 
         <script>
 
 
             $(document).ready(function () {
-
-                function showFlashMessage(message, type) {
-                    var $flash = $('<div class="flash-message ' + type + '">' + message + '</div>');
-                    $('body').append($flash);
-                    $flash.fadeIn(300).delay(3000).fadeOut(300, function() {
-                        $(this).remove();
-                    });
-                }
 
                 $.ajaxSetup({
                     headers: {
@@ -102,7 +95,12 @@
                         data: { name : addTaskValue},
                         success: function (res) {
                             console.log(res);
-                            showFlashMessage(res.message, 'success');
+                            $("#add-task-value").val('')
+                            Swal.fire({
+                                title: res.message,
+                                text: "You clicked the button!",
+                                icon: "success"
+                            });
                             let rowCount = $('#myTable >tbody >tr').length;
                             rowCount++;
                             let newTableRow = '<tr>'+
@@ -125,28 +123,67 @@
                     })
                 })
 
+
+
+
                 $('#tbody').on('click', '.remove', function () {
-                    id = $(this).closest('tr').find('td:first-child input').val();
-                    console.log(id);
-                    $.ajax(
-                        {
-                            url: "/"+id,
-                            type: 'delete',
-                            dataType: "JSON",
-                            data: { "id": id },
-                            success: function (response) {
-                                console.log(response);
-                                showFlashMessage(response.message, 'success');
-                            },
-                            error: function(xhr) {
-                                console.log(xhr.responseText);
-                            }
-                        });
-                    $(this).parent('td').parent('tr').remove();
+
+                    const swalWithBootstrapButtons = Swal.mixin({
+                        customClass: {
+                            confirmButton: "btn btn-success",
+                            cancelButton: "btn btn-danger"
+                        },
+                        buttonsStyling: false
+                    });
+                    swalWithBootstrapButtons.fire({
+                        title: "Are you sure?",
+                        text: "You won't be able to revert this!",
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonText: "Yes, delete it!",
+                        cancelButtonText: "No, cancel!",
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            id = $(this).closest('tr').find('td:first-child input').val();
+                            console.log(id);
+                            $.ajax(
+                                {
+                                    url: "/"+id,
+                                    type: 'delete',
+                                    dataType: "JSON",
+                                    data: { "id": id },
+                                    success: function (response) {
+                                        console.log(response);
+                                        Swal.fire({
+                                            title: "Task Deleted",
+                                            text:  response.message,
+                                            icon: "success"
+                                        });
+                                    },
+                                    error: function(xhr) {
+                                        console.log(xhr.responseText);
+                                    }
+                                });
+                            $(this).parent('td').parent('tr').remove();
+                        } else if (
+                            /* Read more about handling dismissals below */
+                            result.dismiss === Swal.DismissReason.cancel
+                        ) {
+                            swalWithBootstrapButtons.fire({
+                                title: "Cancelled",
+                                text: "Your imaginary file is safe :)",
+                                icon: "error"
+                            });
+                        }
+                    });
+
+
                 });
 
                 $('#tbody').on('click', '.update', function () {
                     id = $(this).closest('tr').find('td:first-child input').val();
+                    $(this).hide();
                     console.log(id);
                     $.ajax(
                         {
@@ -156,7 +193,11 @@
                             data: { "id": id },
                             success: function (response) {
                                 console.log(response);
-                                showFlashMessage(response.message, 'success');
+                                Swal.fire({
+                                    title: response.message,
+                                    text: "Your Task is Updated",
+                                    icon: "success"
+                                });
                             },
                             error: function(xhr) {
                                 console.log(xhr.responseText);

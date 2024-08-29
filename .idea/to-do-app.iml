@@ -135,5 +135,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="sweetalert2" level="application" />
+    <orderEntry type="library" name="bootstrap4-buttons" level="application" />
   </component>
 </module>
